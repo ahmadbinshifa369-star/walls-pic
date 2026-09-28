@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WallVault - Pinterest Dark Edition</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#08080d',
+                        darkCard: '#111520',
+                        accentCyan: '#00f2fe',
+                        accentPurple: '#7928ca',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tone.js for Ambient Synthesizer Music -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <style>
+        body {
+            background-color: #08080d;
+            color: #d1d5db;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism Panel FX */
+        .glass-header {
+            background: rgba(13, 17, 26, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card {
+            background: rgba(17, 21, 32, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(0, 242, 254, 0.4);
+            box-shadow: 0 10px 30px -10px rgba(0, 242, 254, 0.25);
+        }
+
+        /* Pinterest-style Masonry Grid CSS */
+        .masonry-grid {
+            column-count: 1;
+            column-gap: 1.25rem;
+        }
+        @media (min-width: 640px) { .masonry-grid { column-count: 2; } }
+        @media (min-width: 1024px) { .masonry-grid { column-count: 3; } }
+        @media (min-width: 1280px) { .masonry-grid { column-count: 4; } }
+        @media (min-width: 1536px) { .masonry-grid { column-count: 5; } }
+
+        .masonry-item {
+            break-inside: avoid;
+            margin-bottom: 1.25rem;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #08080d;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f293d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f2fe;
+        }
+
+        /* Glowing Animations */
+        @keyframes discordGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(88, 101, 242, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(88, 101, 242, 0.85); }
+        }
+        .discord-glow {
+            animation: discordGlow 3s infinite;
+        }
+
+        .scrollbar-none::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-none {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Sticky Navigation Header -->
+    <header class="sticky top-0 z-40 glass-header px-4 lg:px-8 py-3 transition-all duration-300">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="filterCategory('all')">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 via-indigo-600 to-purple-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-cyan-500/20">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-wider text-white flex items-center gap-1.5">
+                        WALL<span class="text-cyan-400">VAULT</span>
+                    </h1>
+                    <p class="text-[10px] text-gray-400 -mt-1 tracking-widest font-mono uppercase">Pinterest Dark Hub</p>
+                </div>
+            </div>
+
+            <!-- Global Live Search Bar -->
+            <div class="flex-1 max-w-2xl relative hidden sm:block">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Search 500+ wallpapers (e.g. Nissan, Lion, Messi, Cyberpunk, Setup)..." 
+                    class="w-full bg-gray-900/90 border border-gray-800 rounded-full py-2.5 pl-11 pr-10 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all">
+                <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Discord Community Badge & Action Buttons -->
+            <div class="flex items-center space-x-3">
+                
+                <!-- Official Discord Banner Link -->
+                <a href="https://discord.com" target="_blank" title="Join Discord Community abs_org" 
+                   class="discord-glow bg-[#5865F2] hover:bg-[#4752C4] text-white px-3.5 py-2 rounded-full font-medium text-xs sm:text-sm flex items-center gap-2 transition-all transform hover:scale-105 shadow-lg">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 127.14 96.36">
+                        <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1,105.25,105.25,0,0,0,32.19-16.14c2.64-27.38-4.51-51.11-18.91-72.15ZM42.45,65.69C36.18,65.69,31,60,31,53S36,40.3,42.45,40.3C48.92,40.3,54,46,53.9,53S48.92,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5.08-12.7,11.44-12.7C91.13,40.3,96.2,46,96.1,53S91.13,65.69,84.69,65.69Z"/>
+                    </svg>
+                    <span class="font-mono font-bold tracking-wide">abs_org</span>
+                </a>
+
+                <!-- Custom Wallpaper Upload Button -->
+                <button onclick="openUploadModal()" class="bg-gradient-to-r from-cyan-500 to-teal-400 hover:from-cyan-400 hover:to-teal-300 text-gray-950 font-bold px-4 py-2 rounded-full text-xs sm:text-sm flex items-center gap-1.5 transition-all shadow-md shadow-cyan-500/20">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span class="hidden sm:inline">Upload</span>
+                </button>
+
+                <!-- Boards Navigation -->
+                <button onclick="openBoardsModal()" class="bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-cyan-400 p-2.5 sm:px-3.5 sm:py-2 rounded-full text-xs sm:text-sm flex items-center gap-2 transition-all border border-gray-700">
+                    <i class="fa-solid fa-folder-plus text-purple-400"></i>
+                    <span class="hidden sm:inline">Boards</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Search Input -->
+        <div class="mt-3 sm:hidden relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input type="text" id="searchInputMobile" oninput="handleSearchMobile()" placeholder="Search 500+ dark wallpapers..." 
+                class="w-full bg-gray-900/90 border border-gray-800 rounded-full py-2 pl-10 pr-8 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400">
+        </div>
+    </header>
+
+    <!-- Secondary Header Bar: Category Chips & Ambient Synth Controls -->
+    <div class="bg-gray-950/90 border-b border-gray-800/80 py-2.5 px-4 sticky top-[65px] z-30 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+            
+            <!-- Category Filter Tabs -->
+            <div class="flex items-center space-x-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none text-xs font-medium" id="categoryChips">
+                <button onclick="filterCategory('all')" data-cat="all" class="cat-chip active-chip px-4 py-1.5 rounded-full bg-gradient-to-r from-cyan-500 to-indigo-600 text-gray-950 font-extrabold whitespace-nowrap transition-all shadow-md shadow-cyan-500/20">
+                    🔥 All (500)
+                </button>
+                <button onclick="filterCategory('cars')" data-cat="cars" class="cat-chip px-4 py-1.5 rounded-full bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white whitespace-nowrap transition-all border border-gray-700">
+                    🏎️ Cars (100)
+                </button>
+                <button onclick="filterCategory('animals')" data-cat="animals" class="cat-chip px-4 py-1.5 rounded-full bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white whitespace-nowrap transition-all border border-gray-700">
+                    🦁 Animals (100)
+                </button>
+                <button onclick="filterCategory('devices')" data-cat="devices" class="cat-chip px-4 py-1.5 rounded-full bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white whitespace-nowrap transition-all border border-gray-700">
+                    💻 Devices (100)
+                </button>
+                <button onclick="filterCategory('footballers')" data-cat="footballers" class="cat-chip px-4 py-1.5 rounded-full bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white whitespace-nowrap transition-all border border-gray-700">
+                    ⚽ Footballers (100)
+                </button>
+                <button onclick="filterCategory('anime')" data-cat="anime" class="cat-chip px-4 py-1.5 rounded-full bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white whitespace-nowrap transition-all border border-gray-700">
+                    ⚔️ Anime (100)
+                </button>
+                <button onclick="filterCategory('liked')" data-cat="liked" class="cat-chip px-4 py-1.5 rounded-full bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white whitespace-nowrap transition-all border border-gray-700">
+                    ❤️ Liked
+                </button>
+                <button onclick="filterCategory('saved')" data-cat="saved" class="cat-chip px-4 py-1.5 rounded-full bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white whitespace-nowrap transition-all border border-gray-700">
+                    📌 Saved Pins
+                </button>
+            </div>
+
+            <!-- Built-in Ambient Calm Audio Generator -->
+            <div class="flex items-center justify-between w-full md:w-auto space-x-3 bg-gray-900/90 border border-gray-800 px-3.5 py-1.5 rounded-full text-xs">
+                <div class="flex items-center space-x-2">
+                    <span class="relative flex h-2.5 w-2.5">
+                      <span id="audioPulse" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-0"></span>
+                      <span id="audioDot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-gray-500"></span>
+                    </span>
+                    <span class="text-gray-400 font-mono text-[11px]"><i class="fa-solid fa-headphones text-cyan-400 mr-1"></i>Calm Synth Ambient</span>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button id="playAudioBtn" onclick="toggleAmbientAudio()" class="text-cyan-400 hover:text-cyan-300 p-1 transition-colors" title="Toggle Calm Ambient Music">
+                        <i class="fa-solid fa-play text-xs"></i>
+                    </button>
+                    <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.4" oninput="adjustVolume(this.value)" class="w-16 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Main Content Gallery Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 lg:px-8 py-6">
+        
+        <!-- Category Title Info Header -->
+        <div class="flex items-center justify-between mb-6 border-b border-gray-800/50 pb-3">
+            <div>
+                <h2 id="currentCategoryTitle" class="text-lg font-bold text-white tracking-wide flex items-center gap-2">
+                    <span>🔥 All Wallpapers</span>
+                </h2>
+                <p id="gallerySubCount" class="text-xs text-gray-400 mt-0.5">Explore ultra-HD 4K dark aesthetic backgrounds</p>
+            </div>
+
+            <div class="text-xs text-gray-500 font-mono">
+                Showing <span id="displayedCount" class="text-cyan-400 font-bold">0</span> of <span id="totalCatCount">500</span>
+            </div>
+        </div>
+
+        <!-- Pinterest Masonry Layout Grid -->
+        <div id="masonryGrid" class="masonry-grid min-h-[400px]">
+            <!-- Wallpapers injected dynamically -->
+        </div>
+
+        <!-- Empty Results View -->
+        <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-center">
+            <div class="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center text-gray-600 text-3xl mb-4 border border-gray-800">
+                <i class="fa-solid fa-ghost"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-300">No wallpapers found</h3>
+            <p class="text-xs text-gray-500 max-w-sm mt-1">Try another search keyword or upload wallpapers into this category.</p>
+            <button onclick="clearSearch(); filterCategory('all')" class="mt-4 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-cyan-400 rounded-full text-xs font-medium transition-all">
+                Reset Filters
+            </button>
+        </div>
+
+        <!-- Scroll Spinner -->
+        <div id="loadingSpinner" class="flex justify-center items-center py-8 my-4">
+            <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-cyan-400"></div>
+        </div>
+    </main>
+
+    <!-- Fullscreen Wallpaper Lightbox Modal -->
+    <div id="imageModal" class="fixed inset-0 z-50 hidden bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 md:p-6 transition-opacity duration-300">
+        <div class="relative w-full max-w-5xl bg-gray-900/90 border border-gray-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[92vh]">
+            
+            <button onclick="closeModal()" class="absolute top-4 right-4 z-20 w-10 h-10 bg-gray-950/80 hover:bg-gray-800 text-white rounded-full flex items-center justify-center border border-gray-700 transition-all">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Lightbox Image Viewport -->
+            <div class="md:w-2/3 bg-black/80 flex items-center justify-center p-4 relative group overflow-hidden min-h-[300px] md:min-h-[500px]">
+                <img id="modalImage" src="" alt="Wallpaper Preview" class="max-h-[75vh] w-auto object-contain rounded-lg transition-transform duration-300">
+                
+                <button onclick="toggleZoomImage()" class="absolute bottom-4 left-4 bg-gray-900/80 hover:bg-gray-800 text-cyan-400 px-3 py-1.5 rounded-lg text-xs font-mono border border-gray-700/80 transition-all">
+                    <i class="fa-solid fa-magnifying-glass-plus mr-1"></i> <span id="zoomText">Zoom</span>
+                </button>
+            </div>
+
+            <!-- Lightbox Details & Comments Sidebar -->
+            <div class="md:w-1/3 p-6 flex flex-col justify-between border-t md:border-t-0 md:border-l border-gray-800 bg-gray-900/90 overflow-y-auto">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span id="modalCategory" class="text-[11px] font-mono tracking-widest text-cyan-400 bg-cyan-950/80 border border-cyan-800/50 px-2.5 py-1 rounded-full uppercase">
+                            CATEGORY
+                        </span>
+                        <span class="text-xs text-gray-500" id="modalResolution">4K Ultra HD</span>
+                    </div>
+
+                    <h2 id="modalTitle" class="text-xl font-bold text-white mb-2 leading-tight">
+                        Wallpaper Title
+                    </h2>
+
+                    <div class="flex items-center space-x-3 my-4 p-2.5 rounded-xl bg-gray-800/40 border border-gray-800">
+                        <div class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs border border-cyan-500/30">
+                            <i class="fa-solid fa-user-astronaut"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-200" id="modalAuthor">Uploaded by abs_org</p>
+                            <p class="text-[10px] text-gray-500">Verified Hub Contributor</p>
+                        </div>
+                    </div>
+
+                    <div class="my-4">
+                        <p class="text-xs text-gray-400 mb-2 font-medium">Tags & Metadata:</p>
+                        <div id="modalTags" class="flex flex-wrap gap-1.5"></div>
+                    </div>
+
+                    <!-- Comments Section -->
+                    <div class="my-4 pt-3 border-t border-gray-800">
+                        <p class="text-xs font-semibold text-gray-300 mb-2">Community Comments</p>
+                        <div id="commentsList" class="space-y-2 max-h-28 overflow-y-auto pr-1 text-xs text-gray-400 mb-3">
+                            <p class="text-[11px] text-gray-500 italic">No comments yet. Be the first to comment!</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" id="commentInput" placeholder="Add a comment..." class="flex-1 bg-gray-950 border border-gray-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-400">
+                            <button onclick="postComment()" class="bg-cyan-500 hover:bg-cyan-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg text-xs">Post</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3 pt-4 border-t border-gray-800/80">
+                    <div class="flex items-center justify-between text-xs text-gray-400 px-1">
+                        <span id="modalLikesCount"><i class="fa-solid fa-heart text-red-500 mr-1"></i> 124 Likes</span>
+                        <span id="modalViewsCount"><i class="fa-solid fa-eye text-cyan-400 mr-1"></i> 2.4k Views</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="modalSaveBtn" onclick="toggleSaveCurrentModal()" class="py-2.5 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 text-white text-xs font-semibold flex items-center justify-center gap-2 border border-gray-700 transition-all">
+                            <i class="fa-regular fa-bookmark text-amber-400"></i>
+                            <span id="modalSaveText">Save Pin</span>
+                        </button>
+
+                        <button id="modalLikeBtn" onclick="toggleLikeCurrentModal()" class="py-2.5 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 text-white text-xs font-semibold flex items-center justify-center gap-2 border border-gray-700 transition-all">
+                            <i class="fa-regular fa-heart text-red-500"></i>
+                            <span id="modalLikeText">Like</span>
+                        </button>
+                    </div>
+
+                    <a id="modalDownloadBtn" href="#" download target="_blank" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-400 hover:from-cyan-400 hover:to-teal-300 text-gray-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/20">
+                        <i class="fa-solid fa-download text-sm"></i>
+                        <span>Download 4K Resolution</span>
+                    </a>
+
+                    <button onclick="copyWallpaperLink()" class="w-full py-2 text-center text-xs text-gray-400 hover:text-cyan-400 transition-colors flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-link"></i> Copy Direct Share Link
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Upload Wallpaper Modal -->
+    <div id="uploadModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-gray-800 w-full max-w-lg rounded-2xl p-6 relative shadow-2xl">
+            
+            <button onclick="closeUploadModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <h3 class="text-xl font-bold text-white mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-cloud-arrow-up text-cyan-400"></i> Upload Custom Wallpaper
+            </h3>
+            <p class="text-xs text-gray-400 mb-5">Publish high resolution dark backgrounds to your collection.</p>
+
+            <form id="uploadForm" onsubmit="handleCustomUpload(event)" class="space-y-4">
+                
+                <div>
+                    <label class="block text-xs text-gray-300 font-semibold mb-1">Image URL <span class="text-cyan-400">*</span></label>
+                    <input type="url" id="uploadUrl" required placeholder="https://images.unsplash.com/photo-..." 
+                        class="w-full bg-gray-950 border border-gray-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-cyan-400">
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-300 font-semibold mb-1">Wallpaper Title <span class="text-cyan-400">*</span></label>
+                    <input type="text" id="uploadTitle" required placeholder="e.g. Nissan GT-R Cyber Neon" 
+                        class="w-full bg-gray-950 border border-gray-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-cyan-400">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-300 font-semibold mb-1">Category <span class="text-cyan-400">*</span></label>
+                        <select id="uploadCategory" class="w-full bg-gray-950 border border-gray-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-cyan-400">
+                            <option value="cars">Cars</option>
+                            <option value="animals">Animals</option>
+                            <option value="devices">Devices & Tech</option>
+                            <option value="footballers">Footballers</option>
+                            <option value="anime">Anime</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-gray-300 font-semibold mb-1">Tags (Comma Separated)</label>
+                        <input type="text" id="uploadTags" placeholder="neon, 4k, dark, setup" 
+                            class="w-full bg-gray-950 border border-gray-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-cyan-400">
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button type="button" onclick="previewUploadImage()" class="text-xs text-cyan-400 hover:underline flex items-center gap-1 mb-2">
+                        <i class="fa-solid fa-eye"></i> Test Image Preview
+                    </button>
+                    <div id="uploadPreviewBox" class="hidden h-36 w-full rounded-xl border border-gray-800 overflow-hidden bg-black/40 flex items-center justify-center">
+                        <img id="uploadPreviewImg" src="" class="max-h-full object-contain">
+                    </div>
+                </div>
+
+                <div class="pt-3 flex justify-end space-x-3">
+                    <button type="button" onclick="closeUploadModal()" class="px-4 py-2 rounded-xl bg-gray-800 text-gray-300 text-xs hover:bg-gray-700">Cancel</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-400 text-gray-950 font-bold text-xs shadow-lg shadow-cyan-500/20">Publish Wallpaper</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Saved Boards Modal -->
+    <div id="boardsModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-gray-800 w-full max-w-md rounded-2xl p-6 relative shadow-2xl">
+            <button onclick="closeBoardsModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <h3 class="text-xl font-bold text-white mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-folder-plus text-purple-400"></i> My Pinterest Boards
+            </h3>
+            <p class="text-xs text-gray-400 mb-4">Organize wallpapers into custom boards.</p>
+
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="newBoardName" placeholder="New Board Name..." class="flex-1 bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400">
+                <button onclick="createNewBoard()" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl text-xs font-bold">Create</button>
+            </div>
+
+            <div id="boardsList" class="space-y-2 max-h-60 overflow-y-auto">
+                <!-- Board items rendered dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <script>
+        // State variables
+        let allWallpapers = [];
+        let filteredWallpapers = [];
+        let displayedCount = 0;
+        const BATCH_SIZE = 20;
+        let activeCategory = 'all';
+        let searchQuery = '';
+        
+        let savedWallpaperIds = new Set(JSON.parse(localStorage.getItem('wv_saved_wallpapers') || '[]'));
+        let likedWallpaperIds = new Set(JSON.parse(localStorage.getItem('wv_liked_wallpapers') || '[]'));
+        let customWallpapers = JSON.parse(localStorage.getItem('wv_custom_wallpapers') || '[]');
+        let customBoards = JSON.parse(localStorage.getItem('wv_custom_boards') || '["Aesthetic Setup", "Dark Vibes", "Favorites"]');
+        let wallpaperComments = JSON.parse(localStorage.getItem('wv_comments') || '{}');
+
+        let currentModalItem = null;
+        let isAudioPlaying = false;
+        let synthOscillator = null;
+
+        // Curated Image collections for 5 categories (High Quality Dark Aesthetics)
+        const UNSPLASH_POOLS = {
+            cars: [
+                "https://images.unsplash.com/photo-1617814076367-b759c7d7e738",
+                "https://images.unsplash.com/photo-1503376780353-7e6692767b70",
+                "https://images.unsplash.com/photo-1542282088-72c9c27ed0cd",
+                "https://images.unsplash.com/photo-1552519507-da3b142c6e3d",
+                "https://images.unsplash.com/photo-1583121274602-3e2820c69888",
+                "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8",
+                "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a",
+                "https://images.unsplash.com/photo-1525609004556-c46c7d6cf023",
+                "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2",
+                "https://images.unsplash.com/photo-1502877338535-766e1452684a"
+            ],
+            animals: [
+                "https://images.unsplash.com/photo-1564349683136-77e08dba1ef9",
+                "https://images.unsplash.com/photo-1534188753412-3e26d0d618d6",
+                "https://images.unsplash.com/photo-1561731216-c3a4d99437d5",
+                "https://images.unsplash.com/photo-1474511320723-9a56873867b5",
+                "https://images.unsplash.com/photo-1555169062-013468b47731",
+                "https://images.unsplash.com/photo-1574063413132-355dbfd83e0c",
+                "https://images.unsplash.com/photo-1517849845537-4d257902454a",
+                "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba",
+                "https://images.unsplash.com/photo-1456926631375-92c8ce872def",
+                "https://images.unsplash.com/photo-1546182990-dffeafbe841d"
+            ],
+            devices: [
+                "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
+                "https://images.unsplash.com/photo-1526738549149-8e07eca6c147",
+                "https://images.unsplash.com/photo-1550745165-9bc0b252726f",
+                "https://images.unsplash.com/photo-1517336714731-489689fd1ca8",
+                "https://images.unsplash.com/photo-1593642632823-8f785ba67e45",
+                "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe",
+                "https://images.unsplash.com/photo-1587202372775-e229f172b9d7",
+                "https://images.unsplash.com/photo-1547082299-de196ea013d6",
+                "https://images.unsplash.com/photo-1519389950473-47ba0277781c",
+                "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f"
+            ],
+            footballers: [
+                "https://images.unsplash.com/photo-1508098682722-e99c43a406b2",
+                "https://images.unsplash.com/photo-1579952363873-27f3bade9f55",
+                "https://images.unsplash.com/photo-1518091043644-c1d4457512c6",
+                "https://images.unsplash.com/photo-1574629810360-7efbbe195018",
+                "https://images.unsplash.com/photo-1560272564-c83b66b1ad12",
+                "https://images.unsplash.com/photo-1517466787929-bc90951d0974",
+                "https://images.unsplash.com/photo-1543326727-cf6c39e8f84c",
+                "https://images.unsplash.com/photo-1522778119026-d647f0596c20",
+                "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d",
+                "https://images.unsplash.com/photo-1551958219-acbc608c6377"
+            ],
+            anime: [
+                "https://images.unsplash.com/photo-1578632767115-351597cf2477",
+                "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f",
+                "https://images.unsplash.com/photo-1534447677768-be436bb09401",
+                "https://images.unsplash.com/photo-1563089145-599997674d42",
+                "https://images.unsplash.com/photo-1518709268805-4e9042af9f23",
+                "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe",
+                "https://images.unsplash.com/photo-1579783902614-a3fb3927b675",
+                "https://images.unsplash.com/photo-1509198397868-475647b2a1e5",
+                "https://images.unsplash.com/photo-1541701494587-cb58502866ab",
+                "https://images.unsplash.com/photo-1563245372-f21724e3856d"
+            ]
+        };
+
+        const TAG_SETS = {
+            cars: ["supercar", "hypercar", "drift", "speed", "nightdrive", "darkauto"],
+            animals: ["wildlife", "panther", "predator", "darknature", "majestic", "safari"],
+            devices: ["cyberpunk", "battlestation", "rgb", "tech", "minimal", "hardware"],
+            footballers: ["legend", "champions", "stadium", "matchday", "soccer", "goal"],
+            anime: ["manga", "cyber-anime", "tokyo", "fantasy", "samurai", "artwork"]
+        };
+
+        function generateDatabase() {
+            let idCounter = 1;
+            const categories = ['cars', 'animals', 'devices', 'footballers', 'anime'];
+
+            categories.forEach(cat => {
+                const pool = UNSPLASH_POOLS[cat];
+                const tags = TAG_SETS[cat];
+
+                for (let i = 1; i <= 100; i++) {
+                    const baseImg = pool[i % pool.length];
+                    const imgUrl = `${baseImg}?auto=format&fit=crop&w=1000&q=80&sig=${cat}_${i}`;
+                    
+                    const tag1 = tags[i % tags.length];
+                    const tag2 = tags[(i + 2) % tags.length];
+
+                    allWallpapers.push({
+                        id: `wall_${idCounter++}`,
+                        title: `${cat.toUpperCase()} Dark Edition #${i}`,
+                        category: cat,
+                        url: imgUrl,
+                        likes: Math.floor(Math.random() * 900) + 50,
+                        views: (Math.random() * 6 + 0.5).toFixed(1) + 'k',
+                        author: `abs_org`,
+                        tags: [cat, tag1, tag2, "dark", "4k"],
+                        isCustom: false
+                    });
+                }
+            });
+
+            // Prepend uploaded custom wallpapers
+            customWallpapers.forEach(item => {
+                allWallpapers.unshift(item);
+            });
+        }
+
+        function renderMasonryBatch(reset = false) {
+            const grid = document.getElementById('masonryGrid');
+            const emptyState = document.getElementById('emptyState');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+
+            if (reset) {
+                grid.innerHTML = '';
+                displayedCount = 0;
+            }
+
+            const nextBatch = filteredWallpapers.slice(displayedCount, displayedCount + BATCH_SIZE);
+
+            if (filteredWallpapers.length === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                loadingSpinner.classList.add('hidden');
+                document.getElementById('displayedCount').innerText = 0;
+                document.getElementById('totalCatCount').innerText = 0;
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+            }
+
+            nextBatch.forEach(item => {
+                const isSaved = savedWallpaperIds.has(item.id);
+                const isLiked = likedWallpaperIds.has(item.id);
+
+                const cardHtml = `
+                    <div class="masonry-item group relative rounded-2xl overflow-hidden glass-card">
+                        <div class="relative cursor-pointer overflow-hidden bg-gray-950 min-h-[200px]" onclick="openModal('${item.id}')">
+                            <img src="${item.url}" alt="${item.title}" loading="lazy" 
+                                class="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
+                                onerror="this.src='https://placehold.co/600x800/111520/00f2fe?text=Wallpaper+Image'">
+                            
+                            <!-- Pinterest Hover Overlay -->
+                            <div class="absolute inset-0 bg-gradient-to-t from-gray-950/90 via-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-3.5">
+                                <div class="flex justify-end">
+                                    <button onclick="event.stopPropagation(); toggleSave('${item.id}')" 
+                                        class="px-3.5 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md transition-all ${isSaved ? 'bg-amber-400 text-gray-950 font-bold' : 'bg-black/60 hover:bg-black/80 text-white border border-white/20'}">
+                                        <i class="${isSaved ? 'fa-solid' : 'fa-regular'} fa-bookmark mr-1"></i>
+                                        ${isSaved ? 'Saved' : 'Save'}
+                                    </button>
+                                </div>
+
+                                <div>
+                                    <span class="text-[10px] font-mono text-cyan-400 uppercase tracking-widest">${item.category}</span>
+                                    <h3 class="text-xs font-bold text-white line-clamp-1">${item.title}</h3>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer stats -->
+                        <div class="p-2.5 bg-gray-900/90 border-t border-gray-800/80 flex items-center justify-between text-xs">
+                            <span class="text-gray-400 text-[11px] truncate max-w-[110px]">
+                                <i class="fa-solid fa-user-astronaut text-cyan-400 mr-1"></i>${item.author}
+                            </span>
+                            
+                            <div class="flex items-center space-x-2">
+                                <button onclick="toggleLike('${item.id}')" class="flex items-center space-x-1 ${isLiked ? 'text-red-500 font-bold' : 'text-gray-400 hover:text-red-400'} transition-colors">
+                                    <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+                                    <span class="text-[11px]">${item.likes}</span>
+                                </button>
+                                
+                                <a href="${item.url}" target="_blank" download onclick="event.stopPropagation()" class="text-gray-400 hover:text-cyan-400 p-1" title="Download">
+                                    <i class="fa-solid fa-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHtml);
+            });
+
+            displayedCount += nextBatch.length;
+            document.getElementById('displayedCount').innerText = displayedCount;
+            document.getElementById('totalCatCount').innerText = filteredWallpapers.length;
+
+            if (displayedCount >= filteredWallpapers.length) {
+                loadingSpinner.classList.add('hidden');
+            } else {
+                loadingSpinner.classList.remove('hidden');
+            }
+        }
+
+        function filterCategory(cat) {
+            activeCategory = cat;
+            
+            document.querySelectorAll('.cat-chip').forEach(btn => {
+                if(btn.dataset.cat === cat) {
+                    btn.className = "cat-chip active-chip px-4 py-1.5 rounded-full bg-gradient-to-r from-cyan-500 to-indigo-600 text-gray-950 font-extrabold whitespace-nowrap transition-all shadow-md shadow-cyan-500/20";
+                } else {
+                    btn.className = "cat-chip px-4 py-1.5 rounded-full bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white whitespace-nowrap transition-all border border-gray-700";
+                }
+            });
+
+            const titleMap = {
+                all: '🔥 All Wallpapers',
+                cars: '🏎️ Cars (100 Wallpapers)',
+                animals: '🦁 Animals (100 Wallpapers)',
+                devices: '💻 Devices & Tech (100 Wallpapers)',
+                footballers: '⚽ Footballers (100 Wallpapers)',
+                anime: '⚔️ Anime (100 Wallpapers)',
+                liked: '❤️ Liked Wallpapers',
+                saved: '📌 Saved Pins'
+            };
+            document.getElementById('currentCategoryTitle').innerText = titleMap[cat] || 'Wallpapers';
+
+            applyFilters();
+        }
+
+        function applyFilters() {
+            let results = [...allWallpapers];
+
+            if (activeCategory === 'saved') {
+                results = results.filter(w => savedWallpaperIds.has(w.id));
+            } else if (activeCategory === 'liked') {
+                results = results.filter(w => likedWallpaperIds.has(w.id));
+            } else if (activeCategory !== 'all') {
+                results = results.filter(w => w.category === activeCategory);
+            }
+
+            if (searchQuery.trim() !== '') {
+                const query = searchQuery.toLowerCase();
+                results = results.filter(w => 
+                    w.title.toLowerCase().includes(query) ||
+                    w.category.toLowerCase().includes(query) ||
+                    w.tags.some(t => t.toLowerCase().includes(query)) ||
+                    w.author.toLowerCase().includes(query)
+                );
+            }
+
+            filteredWallpapers = results;
+            renderMasonryBatch(true);
+        }
+
+        function handleSearch() {
+            const val = document.getElementById('searchInput').value;
+            searchQuery = val;
+            const clearBtn = document.getElementById('clearSearchBtn');
+            if(val) clearBtn.classList.remove('hidden');
+            else clearBtn.classList.add('hidden');
+            applyFilters();
+        }
+
+        function handleSearchMobile() {
+            searchQuery = document.getElementById('searchInputMobile').value;
+            applyFilters();
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchInputMobile').value = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            searchQuery = '';
+            applyFilters();
+        }
+
+        function toggleSave(id) {
+            if (savedWallpaperIds.has(id)) {
+                savedWallpaperIds.delete(id);
+                showToast('Removed from Saved Pins');
+            } else {
+                savedWallpaperIds.add(id);
+                showToast('Saved to your collection!', 'success');
+            }
+            localStorage.setItem('wv_saved_wallpapers', JSON.stringify(Array.from(savedWallpaperIds)));
+            
+            if (activeCategory === 'saved') {
+                applyFilters();
+            } else {
+                renderMasonryBatch(true);
+            }
+        }
+
+        function toggleLike(id) {
+            const item = allWallpapers.find(w => w.id === id);
+            if (!item) return;
+
+            if (likedWallpaperIds.has(id)) {
+                likedWallpaperIds.delete(id);
+                item.likes -= 1;
+            } else {
+                likedWallpaperIds.add(id);
+                item.likes += 1;
+                showToast('Liked wallpaper ❤️');
+            }
+            localStorage.setItem('wv_liked_wallpapers', JSON.stringify(Array.from(likedWallpaperIds)));
+            renderMasonryBatch(true);
+        }
+
+        function openModal(id) {
+            const item = allWallpapers.find(w => w.id === id);
+            if (!item) return;
+
+            currentModalItem = item;
+            document.getElementById('modalImage').src = item.url;
+            document.getElementById('modalTitle').innerText = item.title;
+            document.getElementById('modalCategory').innerText = item.category;
+            document.getElementById('modalAuthor').innerText = `Uploaded by ${item.author}`;
+            document.getElementById('modalLikesCount').innerHTML = `<i class="fa-solid fa-heart text-red-500 mr-1"></i> ${item.likes} Likes`;
+            document.getElementById('modalDownloadBtn').href = item.url;
+
+            const tagsContainer = document.getElementById('modalTags');
+            tagsContainer.innerHTML = item.tags.map(t => 
+                `<span class="bg-gray-800 text-cyan-400 text-[10px] px-2.5 py-1 rounded-full font-mono border border-gray-700">#${t}</span>`
+            ).join('');
+
+            updateModalButtons();
+            renderComments();
+
+            const modal = document.getElementById('imageModal');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function renderComments() {
+            if (!currentModalItem) return;
+            const comments = wallpaperComments[currentModalItem.id] || [];
+            const list = document.getElementById('commentsList');
+            if (comments.length === 0) {
+                list.innerHTML = `<p class="text-[11px] text-gray-500 italic">No comments yet. Be the first to comment!</p>`;
+            } else {
+                list.innerHTML = comments.map(c => `
+                    <div class="bg-gray-950 p-2 rounded-lg border border-gray-800">
+                        <span class="text-cyan-400 font-bold">${c.user}:</span>
+                        <span class="text-gray-300 ml-1">${c.text}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function postComment() {
+            if (!currentModalItem) return;
+            const input = document.getElementById('commentInput');
+            const val = input.value.trim();
+            if (val) {
+                if (!wallpaperComments[currentModalItem.id]) {
+                    wallpaperComments[currentModalItem.id] = [];
+                }
+                wallpaperComments[currentModalItem.id].push({
+                    user: 'abs_org Member',
+                    text: val
+                });
+                localStorage.setItem('wv_comments', JSON.stringify(wallpaperComments));
+                input.value = '';
+                renderComments();
+                showToast('Comment posted!', 'success');
+            }
+        }
+
+        function updateModalButtons() {
+            if (!currentModalItem) return;
+            const isSaved = savedWallpaperIds.has(currentModalItem.id);
+            const isLiked = likedWallpaperIds.has(currentModalItem.id);
+
+            const saveBtn = document.getElementById('modalSaveBtn');
+            saveBtn.className = `py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition-all ${isSaved ? 'bg-amber-400 text-gray-950 font-bold border-amber-300' : 'bg-gray-800 hover:bg-gray-700 text-white border-gray-700'}`;
+            document.getElementById('modalSaveText').innerText = isSaved ? 'Saved' : 'Save Pin';
+
+            const likeBtn = document.getElementById('modalLikeBtn');
+            likeBtn.className = `py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition-all ${isLiked ? 'bg-red-500/20 text-red-400 border-red-500/40' : 'bg-gray-800 hover:bg-gray-700 text-white border-gray-700'}`;
+            document.getElementById('modalLikeText').innerText = isLiked ? 'Liked' : 'Like';
+        }
+
+        function toggleSaveCurrentModal() {
+            if (currentModalItem) {
+                toggleSave(currentModalItem.id);
+                updateModalButtons();
+            }
+        }
+
+        function toggleLikeCurrentModal() {
+            if (currentModalItem) {
+                toggleLike(currentModalItem.id);
+                updateModalButtons();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        let isZoomed = false;
+        function toggleZoomImage() {
+            const img = document.getElementById('modalImage');
+            isZoomed = !isZoomed;
+            if (isZoomed) {
+                img.classList.add('scale-150');
+                document.getElementById('zoomText').innerText = 'Reset';
+            } else {
+                img.classList.remove('scale-150');
+                document.getElementById('zoomText').innerText = 'Zoom';
+            }
+        }
+
+        function copyWallpaperLink() {
+            if (currentModalItem) {
+                const tempInput = document.createElement('input');
+                tempInput.value = currentModalItem.url;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                showToast('Direct link copied to clipboard!', 'success');
+            }
+        }
+
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.remove('hidden');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.add('hidden');
+            document.getElementById('uploadForm').reset();
+            document.getElementById('uploadPreviewBox').classList.add('hidden');
+        }
+
+        function previewUploadImage() {
+            const url = document.getElementById('uploadUrl').value;
+            if (url) {
+                const previewImg = document.getElementById('uploadPreviewImg');
+                previewImg.src = url;
+                document.getElementById('uploadPreviewBox').classList.remove('hidden');
+            }
+        }
+
+        function handleCustomUpload(e) {
+            e.preventDefault();
+            const url = document.getElementById('uploadUrl').value;
+            const title = document.getElementById('uploadTitle').value;
+            const category = document.getElementById('uploadCategory').value;
+            const tagsStr = document.getElementById('uploadTags').value;
+
+            const tags = tagsStr.split(',').map(t => t.trim()).filter(t => t.length > 0);
+
+            const newItem = {
+                id: `custom_${Date.now()}`,
+                title: title,
+                category: category,
+                url: url,
+                likes: 1,
+                views: '0.1k',
+                author: 'abs_org Member',
+                tags: tags.length ? tags : ['custom', category, 'dark'],
+                isCustom: true
+            };
+
+            customWallpapers.unshift(newItem);
+            localStorage.setItem('wv_custom_wallpapers', JSON.stringify(customWallpapers));
+            allWallpapers.unshift(newItem);
+
+            showToast('Wallpaper published successfully!', 'success');
+            closeUploadModal();
+            filterCategory(category);
+        }
+
+        function openBoardsModal() {
+            renderBoards();
+            document.getElementById('boardsModal').classList.remove('hidden');
+        }
+
+        function closeBoardsModal() {
+            document.getElementById('boardsModal').classList.add('hidden');
+        }
+
+        function createNewBoard() {
+            const input = document.getElementById('newBoardName');
+            const val = input.value.trim();
+            if (val && !customBoards.includes(val)) {
+                customBoards.push(val);
+                localStorage.setItem('wv_custom_boards', JSON.stringify(customBoards));
+                input.value = '';
+                renderBoards();
+                showToast(`Board "${val}" created!`, 'success');
+            }
+        }
+
+        function renderBoards() {
+            const list = document.getElementById('boardsList');
+            list.innerHTML = customBoards.map(b => `
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-gray-950 border border-gray-800 text-xs text-gray-300">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-folder text-purple-400"></i> ${b}</span>
+                    <span class="text-[10px] text-gray-500 font-mono">Custom Board</span>
+                </div>
+            `).join('');
+        }
+
+        function toggleAmbientAudio() {
+            if (!synthOscillator) {
+                initToneAudio();
+            }
+
+            if (isAudioPlaying) {
+                Tone.Transport.stop();
+                isAudioPlaying = false;
+                document.getElementById('playAudioBtn').innerHTML = '<i class="fa-solid fa-play text-xs"></i>';
+                document.getElementById('audioPulse').classList.add('opacity-0');
+                document.getElementById('audioDot').className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-gray-500";
+            } else {
+                Tone.start();
+                Tone.Transport.start();
+                isAudioPlaying = true;
+                document.getElementById('playAudioBtn').innerHTML = '<i class="fa-solid fa-pause text-xs"></i>';
+                document.getElementById('audioPulse').classList.remove('opacity-0');
+                document.getElementById('audioDot').className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400";
+                showToast('Calm Ambient Music Playing 🎵');
+            }
+        }
+
+        function initToneAudio() {
+            const synth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "sine" },
+                envelope: { attack: 3, decay: 4, sustain: 0.8, release: 5 }
+            }).toDestination();
+
+            const reverb = new Tone.Reverb({ decay: 8, wet: 0.5 }).toDestination();
+            synth.connect(reverb);
+            synth.volume.value = -12;
+
+            const chords = [
+                ["C3", "E3", "G3", "B3"],
+                ["A2", "C3", "E3", "G3"],
+                ["F2", "A2", "C3", "E3"],
+                ["G2", "B2", "D3", "F#3"]
+            ];
+
+            let index = 0;
+            Tone.Transport.scheduleRepeat((time) => {
+                synth.triggerAttackRelease(chords[index], "4m", time);
+                index = (index + 1) % chords.length;
+            }, "4m");
+
+            Tone.Transport.bpm.value = 50;
+            synthOscillator = synth;
+        }
+
+        function adjustVolume(val) {
+            if (synthOscillator) {
+                const db = (val - 1) * 30;
+                synthOscillator.volume.value = db;
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-cyan-500 text-gray-950 font-bold' : 'bg-gray-800 text-gray-200 border border-gray-700';
+
+            toast.className = `${bgColor} px-4 py-2.5 rounded-xl shadow-xl text-xs flex items-center space-x-2 transition-all transform translate-y-4 opacity-0 pointer-events-auto`;
+            toast.innerHTML = `
+                <i class="${type === 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-bell text-cyan-400'}"></i>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Infinite Scroll
+        window.addEventListener('scroll', () => {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 800) {
+                if (displayedCount < filteredWallpapers.length) {
+                    renderMasonryBatch();
+                }
+            }
+        });
+
+        // App Initialization
+        window.onload = function() {
+            generateDatabase();
+            filteredWallpapers = [...allWallpapers];
+            renderMasonryBatch(true);
+        };
+    </script>
+</body>
+</html>
